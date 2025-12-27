@@ -109,9 +109,9 @@ export default function ChatScreen() {
           <Image
             source={require("@/assets/images/icon.png")}
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
+              width: 36,
+              height: 36,
+              borderRadius: 18,
               marginRight: 8,
             }}
           />
@@ -143,20 +143,23 @@ export default function ChatScreen() {
         className="flex-1"
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        {/* Header */}
-        <View className="px-4 py-3 border-b border-border flex-row items-center">
+        {/* Header with CALLEVA Brand */}
+        <View 
+          className="px-4 py-3 border-b border-border flex-row items-center"
+          style={{ backgroundColor: colors.primary }}
+        >
           <Image
             source={require("@/assets/images/icon.png")}
-            style={{ width: 40, height: 40, borderRadius: 20 }}
+            style={{ width: 44, height: 44, borderRadius: 22 }}
           />
           <View className="ml-3 flex-1">
-            <Text className="text-lg font-semibold text-foreground">Calleva IA</Text>
+            <Text className="text-lg font-bold text-white tracking-wide">CALLEVA</Text>
             <View className="flex-row items-center">
               <View
                 className="w-2 h-2 rounded-full mr-2"
-                style={{ backgroundColor: colors.success }}
+                style={{ backgroundColor: "#34D399" }}
               />
-              <Text className="text-xs text-muted">Online</Text>
+              <Text className="text-xs text-white opacity-80">Assistente GRC Online</Text>
             </View>
           </View>
         </View>
@@ -176,7 +179,7 @@ export default function ChatScreen() {
           <View className="px-4 pb-2 flex-row items-center">
             <Image
               source={require("@/assets/images/icon.png")}
-              style={{ width: 24, height: 24, borderRadius: 12, marginRight: 8 }}
+              style={{ width: 28, height: 28, borderRadius: 14, marginRight: 8 }}
             />
             <View
               className="px-4 py-2 rounded-2xl"
@@ -203,12 +206,12 @@ export default function ChatScreen() {
                       paddingHorizontal: 12,
                       paddingVertical: 8,
                       borderWidth: 1,
-                      borderColor: colors.border,
+                      borderColor: colors.primary,
                       opacity: pressed ? 0.7 : 1,
                     },
                   ]}
                 >
-                  <Text className="text-sm text-foreground">{suggestion}</Text>
+                  <Text className="text-sm" style={{ color: colors.primary }}>{suggestion}</Text>
                 </Pressable>
               ))}
             </View>

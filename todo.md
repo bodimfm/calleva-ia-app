@@ -16,3 +16,10 @@
 - [x] Criar campo de busca com filtros
 - [x] Exibir resultados agrupados por módulo
 - [x] Adicionar botão flutuante de acesso rápido ao Chat
+
+- [x] Atualizar logo do app com logo oficial CALLEVA
+- [x] Atualizar paleta de cores para azul petróleo da marca
+- [x] Atualizar tema de cores (theme.config.js)
+- [x] Atualizar header das telas com novo logo
+- [x] Atualizar avatar do chat com logo CALLEVA
+- [x] Ajustar cores dos componentes para nova identidade

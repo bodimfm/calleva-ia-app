@@ -1,5 +1,6 @@
 import { ScrollView, Text, View, RefreshControl } from "react-native";
 import { useState, useCallback } from "react";
+import { Image } from "expo-image";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -60,7 +61,7 @@ function ModuloCard({ modulo }: { modulo: ModuloResumo }) {
             className="h-full rounded-full"
             style={{
               width: `${(modulo.concluidos / modulo.total) * 100}%`,
-              backgroundColor: colors.success,
+              backgroundColor: colors.primary,
             }}
           />
         </View>
@@ -99,10 +100,16 @@ export default function DadosScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
-        {/* Header */}
+        {/* Header with CALLEVA Brand */}
         <View className="px-4 pt-2 pb-4">
-          <Text className="text-2xl font-bold text-foreground">Dados do Cliente</Text>
-          <Text className="text-sm text-muted mt-1">Informações do cliente vinculado</Text>
+          <View className="flex-row items-center mb-2">
+            <Image
+              source={require("@/assets/images/icon.png")}
+              style={{ width: 32, height: 32, borderRadius: 8, marginRight: 10 }}
+            />
+            <Text className="text-2xl font-bold text-foreground tracking-wide">Dados do Cliente</Text>
+          </View>
+          <Text className="text-sm text-muted">Informações do cliente vinculado</Text>
         </View>
 
         {/* Client Info Card */}
@@ -110,10 +117,10 @@ export default function DadosScreen() {
           <View className="bg-surface rounded-2xl p-4 border border-border">
             <View className="flex-row items-center mb-4">
               <View
-                className="w-12 h-12 rounded-full items-center justify-center"
-                style={{ backgroundColor: `${colors.primary}20` }}
+                className="w-14 h-14 rounded-full items-center justify-center"
+                style={{ backgroundColor: colors.primary }}
               >
-                <Text className="text-xl font-bold" style={{ color: colors.primary }}>
+                <Text className="text-xl font-bold text-white">
                   {cliente.nome.charAt(0)}
                 </Text>
               </View>
@@ -121,9 +128,9 @@ export default function DadosScreen() {
                 <Text className="text-lg font-semibold text-foreground">{cliente.nome}</Text>
                 <View
                   className="px-2 py-0.5 rounded-full self-start mt-1"
-                  style={{ backgroundColor: `${colors.success}20` }}
+                  style={{ backgroundColor: `${colors.primary}20` }}
                 >
-                  <Text className="text-xs font-medium" style={{ color: colors.success }}>
+                  <Text className="text-xs font-medium" style={{ color: colors.primary }}>
                     {cliente.plano}
                   </Text>
                 </View>
@@ -146,31 +153,34 @@ export default function DadosScreen() {
 
         {/* Compliance Summary */}
         <View className="px-4 mb-4">
-          <View className="bg-surface rounded-2xl p-4 border border-border">
-            <Text className="text-base font-semibold text-foreground mb-3">
+          <View 
+            className="rounded-2xl p-4 border"
+            style={{ backgroundColor: colors.primary, borderColor: colors.primary }}
+          >
+            <Text className="text-base font-semibold text-white mb-3">
               Resumo de Compliance
             </Text>
             <View className="flex-row">
               <View className="flex-1 items-center py-3">
                 <View
-                  className="w-10 h-10 rounded-full items-center justify-center mb-2"
-                  style={{ backgroundColor: `${colors.success}20` }}
+                  className="w-12 h-12 rounded-full items-center justify-center mb-2"
+                  style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
                 >
-                  <IconSymbol name="checkmark.circle.fill" size={24} color={colors.success} />
+                  <IconSymbol name="checkmark.circle.fill" size={28} color="#FFFFFF" />
                 </View>
-                <Text className="text-2xl font-bold text-foreground">78%</Text>
-                <Text className="text-xs text-muted text-center">Conformidade Geral</Text>
+                <Text className="text-3xl font-bold text-white">78%</Text>
+                <Text className="text-xs text-white opacity-80 text-center">Conformidade Geral</Text>
               </View>
-              <View className="w-px bg-border" />
+              <View className="w-px" style={{ backgroundColor: "rgba(255,255,255,0.3)" }} />
               <View className="flex-1 items-center py-3">
                 <View
-                  className="w-10 h-10 rounded-full items-center justify-center mb-2"
-                  style={{ backgroundColor: `${colors.warning}20` }}
+                  className="w-12 h-12 rounded-full items-center justify-center mb-2"
+                  style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
                 >
-                  <IconSymbol name="exclamationmark.triangle.fill" size={24} color={colors.warning} />
+                  <IconSymbol name="exclamationmark.triangle.fill" size={28} color="#FBBF24" />
                 </View>
-                <Text className="text-2xl font-bold text-foreground">12</Text>
-                <Text className="text-xs text-muted text-center">Pendências</Text>
+                <Text className="text-3xl font-bold text-white">12</Text>
+                <Text className="text-xs text-white opacity-80 text-center">Pendências</Text>
               </View>
             </View>
           </View>

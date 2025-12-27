@@ -153,20 +153,20 @@ export const chatSuggestions = [
   "Tarefas vencidas",
 ];
 
-// Color mapping for risk levels
+// CALLEVA Brand Color mapping for risk levels
 export const riskColors = {
-  "Muito Baixo": "#10B981",
-  "Baixo": "#34D399",
+  "Muito Baixo": "#4A8BA8",
+  "Baixo": "#5A9AB8",
   "Médio": "#F59E0B",
   "Elevado": "#EF4444",
   "Muito Elevado": "#DC2626",
 };
 
-// Color mapping for activity status
+// CALLEVA Brand Color mapping for activity status
 export const statusColors = {
-  "Ativa": "#10B981",
+  "Ativa": "#1E3A4C",
   "Em avaliação": "#F59E0B",
-  "Encerrada": "#64748B",
+  "Encerrada": "#5A7A8A",
 };
 
 // Module icons mapping

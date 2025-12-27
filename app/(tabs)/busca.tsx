@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useState, useCallback, useMemo } from "react";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -196,10 +197,16 @@ export default function BuscaScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        {/* Header */}
+        {/* Header with CALLEVA Brand */}
         <View className="px-4 pt-2 pb-4">
-          <Text className="text-2xl font-bold text-foreground">Busca</Text>
-          <Text className="text-sm text-muted mt-1">Pesquise em todos os módulos</Text>
+          <View className="flex-row items-center mb-2">
+            <Image
+              source={require("@/assets/images/icon.png")}
+              style={{ width: 32, height: 32, borderRadius: 8, marginRight: 10 }}
+            />
+            <Text className="text-2xl font-bold text-foreground tracking-wide">Busca</Text>
+          </View>
+          <Text className="text-sm text-muted">Pesquise em todos os módulos</Text>
         </View>
 
         {/* Search Input */}
@@ -212,7 +219,7 @@ export default function BuscaScreen() {
               borderColor: colors.border,
             }}
           >
-            <IconSymbol name="magnifyingglass" size={20} color={colors.muted} />
+            <IconSymbol name="magnifyingglass" size={20} color={colors.primary} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}

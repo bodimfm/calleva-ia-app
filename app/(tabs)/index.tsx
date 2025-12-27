@@ -50,26 +50,26 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
-        {/* Header */}
+        {/* Header with CALLEVA Brand */}
         <View className="px-4 pt-2 pb-4">
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center">
               <Image
                 source={require("@/assets/images/icon.png")}
-                style={{ width: 40, height: 40, borderRadius: 10 }}
+                style={{ width: 44, height: 44, borderRadius: 12 }}
               />
               <View className="ml-3">
-                <Text className="text-xl font-bold text-foreground">CALLEVA IA</Text>
-                <Text className="text-xs text-muted">Governança, Risco e Compliance</Text>
+                <Text className="text-xl font-bold text-foreground tracking-wide">CALLEVA</Text>
+                <Text className="text-xs text-muted tracking-widest">GRC</Text>
               </View>
             </View>
             <Pressable
               onPress={() => router.push("/(tabs)/busca")}
               style={({ pressed }) => [
                 {
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
                   backgroundColor: colors.surface,
                   alignItems: "center",
                   justifyContent: "center",
@@ -171,7 +171,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button - CALLEVA Brand Color */}
       <Pressable
         onPress={() => router.push("/(tabs)/chat")}
         style={({ pressed }) => [
@@ -185,7 +185,7 @@ export default function HomeScreen() {
             backgroundColor: colors.primary,
             alignItems: "center",
             justifyContent: "center",
-            shadowColor: "#000",
+            shadowColor: "#1E3A4C",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 8,
