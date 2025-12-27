@@ -1,4 +1,4 @@
-import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
+import { ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "./clerk-token-cache";
 import { ReactNode } from "react";
 
@@ -24,7 +24,7 @@ export function ClerkAuthProvider({ children }: ClerkAuthProviderProps) {
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ClerkLoaded>{children}</ClerkLoaded>
+      {children}
     </ClerkProvider>
   );
 }
