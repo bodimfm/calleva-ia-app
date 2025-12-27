@@ -23,3 +23,15 @@
 - [x] Atualizar header das telas com novo logo
 - [x] Atualizar avatar do chat com logo CALLEVA
 - [x] Ajustar cores dos componentes para nova identidade
+
+- [x] Analisar documentação do servidor backend
+- [x] Instalar @clerk/clerk-expo
+- [x] Configurar ClerkProvider no app
+- [x] Implementar tela de login com Clerk
+- [x] Configurar rotas protegidas com Clerk
+- [x] Criar serviços de API para GRC-NEXT
+- [x] Integrar dashboard com dados reais do cliente
+- [x] Integrar busca global com API real
+- [x] Integrar dados do cliente com API real
+- [x] Conectar chat com IA Calleva backend
+- [x] Personalizar respostas da IA com dados do cliente

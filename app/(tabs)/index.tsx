@@ -1,7 +1,8 @@
-import { ScrollView, Text, View, RefreshControl, Pressable } from "react-native";
-import { useState, useCallback } from "react";
+import { ScrollView, Text, View, RefreshControl, Pressable, ActivityIndicator } from "react-native";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
+import { useAuth } from "@clerk/clerk-expo";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { StatCard } from "@/components/stat-card";
@@ -10,24 +11,96 @@ import { BarChart } from "@/components/bar-chart";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import {
-  mockDashboardMetrics,
-  riskColors,
-  statusColors,
-} from "@/lib/mock-data";
+  DashboardMetrics,
+  fetchDashboardMetrics,
+  getMockDashboardMetrics,
+} from "@/lib/grc-api";
+import { riskColors, statusColors } from "@/lib/mock-data";
 
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { isSignedIn, getToken } = useAuth();
+  
   const [refreshing, setRefreshing] = useState(false);
-  const [metrics, setMetrics] = useState(mockDashboardMetrics);
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const onRefresh = useCallback(() => {
+  const loadMetrics = useCallback(async () => {
+    try {
+      setError(null);
+      
+      if (isSignedIn) {
+        // Try to fetch from API
+        const data = await fetchDashboardMetrics(getToken);
+        if (data) {
+          setMetrics(data);
+          return;
+        }
+      }
+      
+      // Fallback to mock data
+      setMetrics(getMockDashboardMetrics());
+    } catch (err) {
+      console.error("[Home] Error loading metrics:", err);
+      setError("Erro ao carregar dados");
+      // Use mock data on error
+      setMetrics(getMockDashboardMetrics());
+    } finally {
+      setLoading(false);
+    }
+  }, [isSignedIn, getToken]);
+
+  useEffect(() => {
+    loadMetrics();
+  }, [loadMetrics]);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Simulate data refresh
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  }, []);
+    await loadMetrics();
+    setRefreshing(false);
+  }, [loadMetrics]);
+
+  if (loading) {
+    return (
+      <ScreenContainer>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text className="text-muted mt-4">Carregando dados...</Text>
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <ScreenContainer>
+        <View className="flex-1 items-center justify-center px-8">
+          <IconSymbol name="exclamationmark.triangle.fill" size={48} color={colors.error} />
+          <Text className="text-foreground font-semibold text-lg mt-4 text-center">
+            Erro ao carregar dados
+          </Text>
+          <Text className="text-muted text-center mt-2">{error}</Text>
+          <Pressable
+            onPress={onRefresh}
+            style={({ pressed }) => [
+              {
+                marginTop: 24,
+                backgroundColor: colors.primary,
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 12,
+                opacity: pressed ? 0.9 : 1,
+              },
+            ]}
+          >
+            <Text className="text-white font-semibold">Tentar novamente</Text>
+          </Pressable>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   const pieChartData = metrics.riscosPorClassificacao.map((item) => ({
     label: item.classificacao,
@@ -99,8 +172,8 @@ export default function HomeScreen() {
               value={metrics.riscosElevados + metrics.riscosMuitoElevados}
               icon="exclamationmark.triangle.fill"
               color={colors.error}
-              trend="up"
-              trendValue="+2"
+              trend={metrics.riscosElevados > 20 ? "up" : "down"}
+              trendValue={metrics.riscosElevados > 20 ? `+${metrics.riscosMuitoElevados}` : `-${metrics.riscosTratamentoConcluido}`}
             />
           </View>
           <View className="flex-row flex-wrap gap-3 mt-3">
@@ -115,8 +188,8 @@ export default function HomeScreen() {
               value={metrics.tarefasVencidas}
               icon="checkmark.circle.fill"
               color={colors.warning}
-              trend="down"
-              trendValue="-1"
+              trend={metrics.tarefasVencidas > 10 ? "up" : "down"}
+              trendValue={metrics.tarefasVencidas > 10 ? `+${metrics.tarefasVencidas - 10}` : `-${10 - metrics.tarefasVencidas}`}
             />
           </View>
         </View>

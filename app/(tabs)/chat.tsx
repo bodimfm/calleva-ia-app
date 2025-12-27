@@ -7,9 +7,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+import { useAuth } from "@clerk/clerk-expo";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -18,45 +19,61 @@ import {
   ChatMessage,
   initialChatMessages,
   chatSuggestions,
-  mockDashboardMetrics,
 } from "@/lib/mock-data";
+import {
+  askCallevaAI,
+  getMockDashboardMetrics,
+} from "@/lib/grc-api";
 
 export default function ChatScreen() {
   const colors = useColors();
+  const { isSignedIn, getToken } = useAuth();
+  
   const [messages, setMessages] = useState<ChatMessage[]>(initialChatMessages);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId] = useState(() => `session-${Date.now()}`);
   const flatListRef = useRef<FlatList>(null);
 
-  const generateResponse = (question: string): string => {
+  // Local fallback response generator
+  const generateLocalResponse = (question: string): string => {
     const q = question.toLowerCase();
+    const metrics = getMockDashboardMetrics();
 
     if (q.includes("risco") && (q.includes("elevado") || q.includes("alto"))) {
-      const total = mockDashboardMetrics.riscosElevados + mockDashboardMetrics.riscosMuitoElevados;
-      return `Atualmente você possui **${total} riscos** classificados como elevados ou muito elevados:\n\n• ${mockDashboardMetrics.riscosElevados} riscos elevados\n• ${mockDashboardMetrics.riscosMuitoElevados} riscos muito elevados\n\nRecomendo priorizar a análise e tratamento desses riscos para garantir a conformidade.`;
+      const total = metrics.riscosElevados + metrics.riscosMuitoElevados;
+      return `Atualmente você possui **${total} riscos** classificados como elevados ou muito elevados:\n\n• ${metrics.riscosElevados} riscos elevados\n• ${metrics.riscosMuitoElevados} riscos muito elevados\n\nRecomendo priorizar a análise e tratamento desses riscos para garantir a conformidade.`;
     }
 
     if (q.includes("atividade") || q.includes("tratamento") || q.includes("ropa")) {
-      return `Aqui está o resumo das **atividades de tratamento**:\n\n• Total: ${mockDashboardMetrics.totalAtividades} atividades\n• Ativas: ${mockDashboardMetrics.atividadesAtivas}\n• Em avaliação: ${mockDashboardMetrics.atividadesEmAvaliacao}\n• Encerradas: ${mockDashboardMetrics.atividadesEncerradas}\n\nPosso ajudar com mais detalhes sobre alguma atividade específica?`;
+      return `Aqui está o resumo das **atividades de tratamento**:\n\n• Total: ${metrics.totalAtividades} atividades\n• Ativas: ${metrics.atividadesAtivas}\n• Em avaliação: ${metrics.atividadesEmAvaliacao}\n• Encerradas: ${metrics.atividadesEncerradas}\n\nPosso ajudar com mais detalhes sobre alguma atividade específica?`;
     }
 
     if (q.includes("fornecedor") && (q.includes("pendente") || q.includes("triagem"))) {
-      return `Você possui **${mockDashboardMetrics.fornecedoresPendentesTriagem} fornecedores** pendentes de triagem.\n\nAlém disso, ${mockDashboardMetrics.fornecedoresAltoRisco} fornecedores estão classificados como alto risco e requerem atenção especial.\n\nDeseja que eu liste os fornecedores prioritários?`;
+      return `Você possui **${metrics.fornecedoresPendentesTriagem} fornecedores** pendentes de triagem.\n\nAlém disso, ${metrics.fornecedoresAltoRisco} fornecedores estão classificados como alto risco e requerem atenção especial.\n\nDeseja que eu liste os fornecedores prioritários?`;
     }
 
     if (q.includes("tarefa") && q.includes("vencid")) {
-      return `Existem **${mockDashboardMetrics.tarefasVencidas} tarefas vencidas** que precisam de atenção imediata.\n\nO total de tarefas pendentes é ${mockDashboardMetrics.tarefasPendentes}.\n\nRecomendo revisar essas tarefas para manter a conformidade em dia.`;
+      return `Existem **${metrics.tarefasVencidas} tarefas vencidas** que precisam de atenção imediata.\n\nO total de tarefas pendentes é ${metrics.tarefasPendentes}.\n\nRecomendo revisar essas tarefas para manter a conformidade em dia.`;
     }
 
     if (q.includes("fornecedor")) {
-      return `Seu cadastro possui **${mockDashboardMetrics.totalFornecedores} fornecedores**:\n\n• Pendentes de triagem: ${mockDashboardMetrics.fornecedoresPendentesTriagem}\n• Alto risco: ${mockDashboardMetrics.fornecedoresAltoRisco}\n\nPosso ajudar a filtrar por categoria ou nível de risco?`;
+      return `Seu cadastro possui **${metrics.totalFornecedores} fornecedores**:\n\n• Pendentes de triagem: ${metrics.fornecedoresPendentesTriagem}\n• Alto risco: ${metrics.fornecedoresAltoRisco}\n\nPosso ajudar a filtrar por categoria ou nível de risco?`;
     }
 
-    return `Entendi sua pergunta sobre "${question}". Para fornecer informações mais precisas, posso ajudar com:\n\n• Atividades de tratamento (ROPA)\n• Gestão de riscos\n• Fornecedores e triagem\n• Tarefas e prazos\n\nComo posso ajudar?`;
+    if (q.includes("lgpd") || q.includes("privacidade") || q.includes("dados pessoais")) {
+      return `A **LGPD (Lei Geral de Proteção de Dados)** é a legislação brasileira que regula o tratamento de dados pessoais.\n\nPrincipais pontos:\n• Finalidade específica para coleta\n• Consentimento do titular\n• Direitos dos titulares\n• Relatório de Impacto (RIPD)\n\nPosso ajudar com algum aspecto específico da conformidade?`;
+    }
+
+    if (q.includes("incidente") || q.includes("vazamento")) {
+      return `Para **incidentes de segurança**, é importante:\n\n1. Identificar e conter o incidente\n2. Avaliar o impacto nos dados pessoais\n3. Comunicar à ANPD em até 2 dias úteis (se aplicável)\n4. Notificar os titulares afetados\n5. Documentar as ações tomadas\n\nPrecisa de ajuda para registrar um incidente?`;
+    }
+
+    return `Entendi sua pergunta sobre "${question}". Como assistente de GRC, posso ajudar com:\n\n• Atividades de tratamento (ROPA)\n• Gestão de riscos\n• Fornecedores e triagem\n• Tarefas e prazos\n• Conformidade LGPD\n• Incidentes de segurança\n\nComo posso ajudar?`;
   };
 
   const sendMessage = useCallback(
-    (text: string) => {
+    async (text: string) => {
       if (!text.trim()) return;
 
       if (Platform.OS !== "web") {
@@ -74,28 +91,60 @@ export default function ChatScreen() {
       setInputText("");
       setIsTyping(true);
 
-      // Simulate AI response delay
-      setTimeout(() => {
-        const response = generateResponse(text);
-        const assistantMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: response,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-        setIsTyping(false);
-
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      }, 1000 + Math.random() * 1000);
-
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
+
+      try {
+        let responseContent: string;
+
+        if (isSignedIn) {
+          // Try to call the real Calleva AI API
+          const result = await askCallevaAI(
+            sessionId,
+            text.trim(),
+            undefined,
+            getToken
+          );
+
+          if (result.success && result.response?.message) {
+            responseContent = result.response.message;
+          } else {
+            // Fallback to local response
+            responseContent = generateLocalResponse(text);
+          }
+        } else {
+          // Use local response when not signed in
+          responseContent = generateLocalResponse(text);
+        }
+
+        const assistantMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: responseContent,
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+      } catch (error) {
+        console.error("[Chat] Error getting AI response:", error);
+        
+        // Fallback to local response on error
+        const assistantMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: generateLocalResponse(text),
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } finally {
+        setIsTyping(false);
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      }
     },
-    []
+    [isSignedIn, getToken, sessionId]
   );
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
@@ -153,13 +202,15 @@ export default function ChatScreen() {
             style={{ width: 44, height: 44, borderRadius: 22 }}
           />
           <View className="ml-3 flex-1">
-            <Text className="text-lg font-bold text-white tracking-wide">CALLEVA</Text>
+            <Text className="text-lg font-bold text-white tracking-wide">CALLEVA IA</Text>
             <View className="flex-row items-center">
               <View
                 className="w-2 h-2 rounded-full mr-2"
-                style={{ backgroundColor: "#34D399" }}
+                style={{ backgroundColor: isSignedIn ? "#34D399" : "#FBBF24" }}
               />
-              <Text className="text-xs text-white opacity-80">Assistente GRC Online</Text>
+              <Text className="text-xs text-white opacity-80">
+                {isSignedIn ? "Assistente GRC Online" : "Modo Demonstração"}
+              </Text>
             </View>
           </View>
         </View>
@@ -185,7 +236,7 @@ export default function ChatScreen() {
               className="px-4 py-2 rounded-2xl"
               style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
             >
-              <Text className="text-muted text-sm">Calleva está digitando...</Text>
+              <Text className="text-muted text-sm">Calleva está pensando...</Text>
             </View>
           </View>
         )}
@@ -242,13 +293,13 @@ export default function ChatScreen() {
           </View>
           <Pressable
             onPress={() => sendMessage(inputText)}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || isTyping}
             style={({ pressed }) => [
               {
                 width: 44,
                 height: 44,
                 borderRadius: 22,
-                backgroundColor: inputText.trim() ? colors.primary : colors.surface,
+                backgroundColor: inputText.trim() && !isTyping ? colors.primary : colors.surface,
                 alignItems: "center",
                 justifyContent: "center",
                 opacity: pressed ? 0.8 : 1,
@@ -259,7 +310,7 @@ export default function ChatScreen() {
             <IconSymbol
               name="paperplane.fill"
               size={20}
-              color={inputText.trim() ? "#FFFFFF" : colors.muted}
+              color={inputText.trim() && !isTyping ? "#FFFFFF" : colors.muted}
             />
           </Pressable>
         </View>

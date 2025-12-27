@@ -6,15 +6,18 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
+import { useAuth } from "@clerk/clerk-expo";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
-import { mockSearchResults, moduleIcons, SearchResult } from "@/lib/mock-data";
+import { moduleIcons } from "@/lib/mock-data";
+import { SearchResult, searchGlobal } from "@/lib/grc-api";
 
 type ModuleFilter = "all" | "ropa" | "grc" | "fornecedores" | "incidentes" | "tarefas";
 
@@ -27,9 +30,36 @@ const moduleLabels: Record<ModuleFilter, string> = {
   tarefas: "Tarefas",
 };
 
-// Extended mock data for search
-const extendedSearchData: SearchResult[] = [
-  ...mockSearchResults,
+// Local search data for fallback
+const localSearchData: SearchResult[] = [
+  {
+    id: "1",
+    module: "ropa",
+    title: "Cadastro de Clientes",
+    description: "Atividade de tratamento para cadastro e gestão de clientes",
+    url: "/ropa/1",
+  },
+  {
+    id: "2",
+    module: "grc",
+    title: "Risco de Vazamento de Dados",
+    description: "Risco elevado relacionado a possível vazamento de dados pessoais",
+    url: "/grc/2",
+  },
+  {
+    id: "3",
+    module: "fornecedores",
+    title: "Cloud Provider ABC",
+    description: "Fornecedor de serviços de cloud computing - Alto risco",
+    url: "/fornecedores/3",
+  },
+  {
+    id: "4",
+    module: "incidentes",
+    title: "Incidente #2024-001",
+    description: "Acesso não autorizado a sistema interno",
+    url: "/incidentes/4",
+  },
   {
     id: "5",
     module: "ropa",
@@ -72,33 +102,102 @@ const extendedSearchData: SearchResult[] = [
     description: "Perda de dispositivo com dados pessoais",
     url: "/incidentes/10",
   },
+  {
+    id: "11",
+    module: "tarefas",
+    title: "Atualizar RIPD",
+    description: "Tarefa para atualização do Relatório de Impacto",
+    url: "/tarefas/11",
+  },
+  {
+    id: "12",
+    module: "grc",
+    title: "Risco de Acesso Indevido",
+    description: "Risco médio relacionado a controles de acesso",
+    url: "/grc/12",
+  },
 ];
 
 export default function BuscaScreen() {
   const colors = useColors();
+  const { isSignedIn, getToken } = useAuth();
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ModuleFilter>("all");
+  const [results, setResults] = useState<SearchResult[]>(localSearchData);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const filteredResults = useMemo(() => {
-    let results = extendedSearchData;
+  // Local search function
+  const performLocalSearch = useCallback((query: string, filter: ModuleFilter): SearchResult[] => {
+    let filtered = localSearchData;
 
     // Filter by module
-    if (activeFilter !== "all") {
-      results = results.filter((item) => item.module === activeFilter);
+    if (filter !== "all") {
+      filtered = filtered.filter((item) => item.module === filter);
     }
 
     // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      results = results.filter(
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      filtered = filtered.filter(
         (item) =>
-          item.title.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query)
+          item.title.toLowerCase().includes(q) ||
+          item.description.toLowerCase().includes(q)
       );
     }
 
-    return results;
-  }, [searchQuery, activeFilter]);
+    return filtered;
+  }, []);
+
+  // API search function
+  const performApiSearch = useCallback(async (query: string, filter: ModuleFilter) => {
+    if (!isSignedIn) {
+      return performLocalSearch(query, filter);
+    }
+
+    try {
+      const modules = filter === "all" ? undefined : [filter];
+      const apiResults = await searchGlobal(query, modules, getToken);
+      
+      if (apiResults && apiResults.length > 0) {
+        return apiResults;
+      }
+      
+      // Fallback to local search if API returns empty
+      return performLocalSearch(query, filter);
+    } catch (error) {
+      console.error("[Busca] API search error:", error);
+      return performLocalSearch(query, filter);
+    }
+  }, [isSignedIn, getToken, performLocalSearch]);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!searchQuery.trim()) {
+      // Show all results for current filter when no query
+      setResults(performLocalSearch("", activeFilter));
+      return;
+    }
+
+    setIsSearching(true);
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      const searchResults = await performApiSearch(searchQuery, activeFilter);
+      setResults(searchResults);
+      setIsSearching(false);
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, activeFilter, performApiSearch, performLocalSearch]);
 
   const handleFilterPress = useCallback((filter: ModuleFilter) => {
     if (Platform.OS !== "web") {
@@ -175,6 +274,17 @@ export default function BuscaScreen() {
               >
                 {moduleLabels[item.module as ModuleFilter] || item.module.toUpperCase()}
               </Text>
+              {item.source === "embedding" && (
+                <Text
+                  className="text-xs px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: `${colors.success}20`,
+                    color: colors.success,
+                  }}
+                >
+                  IA
+                </Text>
+              )}
             </View>
             <Text className="text-base font-semibold text-foreground mb-1">
               {item.title}
@@ -206,7 +316,9 @@ export default function BuscaScreen() {
             />
             <Text className="text-2xl font-bold text-foreground tracking-wide">Busca</Text>
           </View>
-          <Text className="text-sm text-muted">Pesquise em todos os módulos</Text>
+          <Text className="text-sm text-muted">
+            {isSignedIn ? "Pesquise em todos os módulos" : "Pesquisa em modo demonstração"}
+          </Text>
         </View>
 
         {/* Search Input */}
@@ -232,7 +344,10 @@ export default function BuscaScreen() {
               }}
               returnKeyType="search"
             />
-            {searchQuery.length > 0 && (
+            {isSearching && (
+              <ActivityIndicator size="small" color={colors.primary} />
+            )}
+            {searchQuery.length > 0 && !isSearching && (
               <Pressable
                 onPress={() => setSearchQuery("")}
                 style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
@@ -257,7 +372,7 @@ export default function BuscaScreen() {
 
         {/* Results */}
         <FlatList
-          data={filteredResults}
+          data={results}
           renderItem={renderResult}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
@@ -272,9 +387,9 @@ export default function BuscaScreen() {
             </View>
           }
           ListHeaderComponent={
-            filteredResults.length > 0 ? (
+            results.length > 0 ? (
               <Text className="text-sm text-muted mb-3">
-                {filteredResults.length} resultado{filteredResults.length !== 1 ? "s" : ""}{" "}
+                {results.length} resultado{results.length !== 1 ? "s" : ""}{" "}
                 {searchQuery ? `para "${searchQuery}"` : ""}
               </Text>
             ) : null

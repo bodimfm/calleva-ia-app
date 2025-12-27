@@ -1,11 +1,19 @@
-import { ScrollView, Text, View, RefreshControl } from "react-native";
-import { useState, useCallback } from "react";
+import { ScrollView, Text, View, RefreshControl, ActivityIndicator, Pressable } from "react-native";
+import { useState, useCallback, useEffect } from "react";
 import { Image } from "expo-image";
+import { useAuth, useUser, useOrganization } from "@clerk/clerk-expo";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
-import { mockClienteInfo, mockModulosResumo, ModuloResumo } from "@/lib/mock-data";
+import {
+  ClienteInfo,
+  ModuloResumo,
+  fetchClienteInfo,
+  fetchModulosResumo,
+  getMockClienteInfo,
+  getMockModulosResumo,
+} from "@/lib/grc-api";
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -19,11 +27,15 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function ModuloCard({ modulo }: { modulo: ModuloResumo }) {
   const colors = useColors();
   const hasAlerts = modulo.alertas > 0;
+  const progressPercent = modulo.total > 0 ? Math.round((modulo.concluidos / modulo.total) * 100) : 0;
 
   return (
     <View className="bg-surface rounded-2xl p-4 border border-border mb-3">
       <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-base font-semibold text-foreground">{modulo.nome}</Text>
+        <View className="flex-row items-center">
+          <Text className="text-xl mr-2">{modulo.icone}</Text>
+          <Text className="text-base font-semibold text-foreground">{modulo.nome}</Text>
+        </View>
         {hasAlerts && (
           <View
             className="px-2 py-1 rounded-full flex-row items-center"
@@ -60,13 +72,13 @@ function ModuloCard({ modulo }: { modulo: ModuloResumo }) {
           <View
             className="h-full rounded-full"
             style={{
-              width: `${(modulo.concluidos / modulo.total) * 100}%`,
+              width: `${progressPercent}%`,
               backgroundColor: colors.primary,
             }}
           />
         </View>
         <Text className="text-xs text-muted mt-1 text-right">
-          {Math.round((modulo.concluidos / modulo.total) * 100)}% concluído
+          {progressPercent}% concluído
         </Text>
       </View>
     </View>
@@ -75,21 +87,115 @@ function ModuloCard({ modulo }: { modulo: ModuloResumo }) {
 
 export default function DadosScreen() {
   const colors = useColors();
+  const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
+  const { organization } = useOrganization();
+  
   const [refreshing, setRefreshing] = useState(false);
-  const cliente = mockClienteInfo;
-  const modulos = mockModulosResumo;
+  const [loading, setLoading] = useState(true);
+  const [cliente, setCliente] = useState<ClienteInfo | null>(null);
+  const [modulos, setModulos] = useState<ModuloResumo[]>([]);
 
-  const onRefresh = useCallback(() => {
+  const loadData = useCallback(async () => {
+    try {
+      if (isSignedIn) {
+        // Try to fetch from API
+        const [clienteData, modulosData] = await Promise.all([
+          fetchClienteInfo(getToken),
+          fetchModulosResumo(getToken),
+        ]);
+
+        if (clienteData) {
+          setCliente(clienteData);
+        } else {
+          // Use organization data from Clerk if available
+          setCliente({
+            ...getMockClienteInfo(),
+            nome: organization?.name || getMockClienteInfo().nome,
+            responsavel: user?.fullName || getMockClienteInfo().responsavel,
+            email: user?.primaryEmailAddress?.emailAddress || getMockClienteInfo().email,
+          });
+        }
+
+        if (modulosData && modulosData.length > 0) {
+          setModulos(modulosData);
+        } else {
+          setModulos(getMockModulosResumo());
+        }
+      } else {
+        // Use mock data when not signed in
+        setCliente(getMockClienteInfo());
+        setModulos(getMockModulosResumo());
+      }
+    } catch (error) {
+      console.error("[Dados] Error loading data:", error);
+      // Fallback to mock data
+      setCliente(getMockClienteInfo());
+      setModulos(getMockModulosResumo());
+    } finally {
+      setLoading(false);
+    }
+  }, [isSignedIn, getToken, organization, user]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  }, []);
+    await loadData();
+    setRefreshing(false);
+  }, [loadData]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("pt-BR");
   };
+
+  // Calculate compliance stats from modulos
+  const totalItems = modulos.reduce((acc, m) => acc + m.total, 0);
+  const completedItems = modulos.reduce((acc, m) => acc + m.concluidos, 0);
+  const pendingItems = modulos.reduce((acc, m) => acc + m.pendentes, 0);
+  const compliancePercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+  if (loading) {
+    return (
+      <ScreenContainer>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text className="text-muted mt-4">Carregando dados...</Text>
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  if (!cliente) {
+    return (
+      <ScreenContainer>
+        <View className="flex-1 items-center justify-center px-8">
+          <IconSymbol name="exclamationmark.triangle.fill" size={48} color={colors.error} />
+          <Text className="text-foreground font-semibold text-lg mt-4 text-center">
+            Erro ao carregar dados
+          </Text>
+          <Pressable
+            onPress={onRefresh}
+            style={({ pressed }) => [
+              {
+                marginTop: 24,
+                backgroundColor: colors.primary,
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 12,
+                opacity: pressed ? 0.9 : 1,
+              },
+            ]}
+          >
+            <Text className="text-white font-semibold">Tentar novamente</Text>
+          </Pressable>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer>
@@ -168,7 +274,7 @@ export default function DadosScreen() {
                 >
                   <IconSymbol name="checkmark.circle.fill" size={28} color="#FFFFFF" />
                 </View>
-                <Text className="text-3xl font-bold text-white">78%</Text>
+                <Text className="text-3xl font-bold text-white">{compliancePercent}%</Text>
                 <Text className="text-xs text-white opacity-80 text-center">Conformidade Geral</Text>
               </View>
               <View className="w-px" style={{ backgroundColor: "rgba(255,255,255,0.3)" }} />
@@ -179,7 +285,7 @@ export default function DadosScreen() {
                 >
                   <IconSymbol name="exclamationmark.triangle.fill" size={28} color="#FBBF24" />
                 </View>
-                <Text className="text-3xl font-bold text-white">12</Text>
+                <Text className="text-3xl font-bold text-white">{pendingItems}</Text>
                 <Text className="text-xs text-white opacity-80 text-center">Pendências</Text>
               </View>
             </View>
