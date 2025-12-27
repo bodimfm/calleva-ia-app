@@ -35,3 +35,28 @@
 - [x] Integrar dados do cliente com API real
 - [x] Conectar chat com IA Calleva backend
 - [x] Personalizar respostas da IA com dados do cliente
+
+## Fase 3 - Endpoints API, Notificações e Navegação
+
+### Endpoints da API Mobile no GRC-NEXT
+- [x] Criar endpoint /api/mobile/dashboard
+- [x] Criar endpoint /api/mobile/cliente
+- [x] Criar endpoint /api/mobile/search
+- [x] Criar endpoint /api/mobile/calleva-ai
+
+### Notificações Push
+- [x] Configurar expo-notifications no app
+- [x] Implementar registro de token de push
+- [x] Criar serviço de notificações no servidor
+- [x] Implementar alertas para tarefas vencidas
+- [x] Implementar alertas para riscos elevados
+- [x] Implementar alertas para incidentes
+
+### Navegação para Detalhes
+- [x] Criar tela de detalhes de atividade ROPA
+- [x] Criar tela de detalhes de risco
+- [x] Criar tela de detalhes de fornecedor
+- [x] Criar tela de detalhes de incidente
+- [x] Criar tela de detalhes de tarefa
+- [x] Implementar navegação dos cards do dashboard
+- [x] Implementar navegação dos resultados de busca

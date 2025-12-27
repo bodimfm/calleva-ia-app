@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { useAuth } from "@clerk/clerk-expo";
@@ -120,6 +121,7 @@ const localSearchData: SearchResult[] = [
 
 export default function BuscaScreen() {
   const colors = useColors();
+  const router = useRouter();
   const { isSignedIn, getToken } = useAuth();
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -210,9 +212,28 @@ export default function BuscaScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    // In production, this would navigate to the detail screen
-    console.log("Navigate to:", item.url);
-  }, []);
+    
+    // Navegar para a tela de detalhes apropriada
+    switch (item.module) {
+      case "ropa":
+        router.push(`/detalhes/ropa/${item.id}` as any);
+        break;
+      case "grc":
+        router.push(`/detalhes/risco/${item.id}` as any);
+        break;
+      case "fornecedores":
+        router.push(`/detalhes/fornecedor/${item.id}` as any);
+        break;
+      case "incidentes":
+        router.push(`/detalhes/incidente/${item.id}` as any);
+        break;
+      case "tarefas":
+        router.push(`/detalhes/tarefa/${item.id}` as any);
+        break;
+      default:
+        console.log("Navigate to:", item.url);
+    }
+  }, [router]);
 
   const renderFilterChip = (filter: ModuleFilter) => {
     const isActive = activeFilter === filter;
