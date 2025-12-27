@@ -60,3 +60,19 @@
 - [x] Criar tela de detalhes de tarefa
 - [x] Implementar navegação dos cards do dashboard
 - [x] Implementar navegação dos resultados de busca
+
+## Fase 4 - Repositório GitHub e Integração Supabase
+
+### Repositório GitHub
+- [ ] Criar repositório GitHub para o app
+- [ ] Fazer push do código para o repositório
+
+### Integração Supabase
+- [ ] Remover Clerk e configurar Supabase Auth
+- [ ] Criar tabelas no Supabase para dados do GRC
+- [ ] Implementar login com email/senha via Supabase
+- [ ] Implementar login com OAuth (Google/Microsoft)
+- [ ] Criar serviços de API para Supabase
+- [ ] Conectar dashboard com dados reais do Supabase
+- [ ] Conectar chat com dados reais
+- [ ] Conectar busca com dados reais
