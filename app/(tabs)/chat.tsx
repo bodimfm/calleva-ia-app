@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@clerk/clerk-expo";

@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { useEffect } from "react";
-import { useAuth, useSignIn, useOAuth } from "@clerk/clerk-expo";
+import { useAuth, useOAuth } from "@clerk/clerk-expo";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 
@@ -17,8 +17,7 @@ export default function LoginScreen() {
   const colors = useColors();
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
-  const { signIn, setActive } = useSignIn();
-  
+
   // OAuth with Google
   const { startOAuthFlow: startGoogleOAuth } = useOAuth({ strategy: "oauth_google" });
   // OAuth with Microsoft
