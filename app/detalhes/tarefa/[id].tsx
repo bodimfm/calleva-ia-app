@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useUser } from "@clerk/clerk-expo";
 
 import { DetailScreen } from "@/components/detail-screen";
 import { useColors } from "@/hooks/use-colors";
@@ -40,7 +39,6 @@ export default function DetalheTarefaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
-  const { isSignedIn, user } = useUser();
 
   const [tarefa, setTarefa] = useState<Tarefa | null>(null);
   const [isLoading, setIsLoading] = useState(true);

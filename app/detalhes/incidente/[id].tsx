@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useUser } from "@clerk/clerk-expo";
 
 import { DetailScreen } from "@/components/detail-screen";
 import { useColors } from "@/hooks/use-colors";
@@ -48,7 +47,6 @@ export default function DetalheIncidenteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
-  const { isSignedIn, user } = useUser();
 
   const [incidente, setIncidente] = useState<Incidente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
